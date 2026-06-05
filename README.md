@@ -1,15 +1,16 @@
 #  PROJET NETWORK
 
 
-1. ⁠modéliser la salle
+- [] ⁠modéliser la salle
     - donne la demande (full, under capacity, …)
-2. ⁠algo qui solve user and system equilibrium
-3. ⁠faire les différentes distribution de demande
-4. simulations: obstacles, suivi de groupe
+- [] algo qui solve user and system equilibrium
+- [] faire les différentes distribution de demande
+- [] simulations: obstacles, suivi de groupe
 
 
 ---
 
 ## Sources 
 
-- Speed in fire : https://link.springer.com/book/10.1007/978-1-4939-2565-0 -> slide 871 du pdf  page  3-337l du livre
+- Speed in fire : [lien](https://link.springer.com/book/10.1007/978-1-4939-2565-0) 
+    - slide 871 du pdf / page  3-337 du livre
