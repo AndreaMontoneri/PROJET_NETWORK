@@ -50,25 +50,54 @@ def plot_network(
     # ==========================
     # Draw nodes
     # ==========================
-    normal_nodes = df_nodes[~df_nodes["node_id"].isin(door_nodes)]
     door_nodes_df = df_nodes[df_nodes["node_id"].isin(door_nodes)]
 
-    ax.scatter(
-        normal_nodes["x_coord"] + 0.5,
-        normal_nodes["y_coord"] + 0.5,
-        s=300,
-        color="lightblue",
-        edgecolor="black",
-        label="Normal cell",
-    )
+    cap8 = df_nodes[
+        (~df_nodes["node_id"].isin(door_nodes)) & (df_nodes["capacity"] == 8)
+    ]
+
+    cap2 = df_nodes[
+        (~df_nodes["node_id"].isin(door_nodes)) & (df_nodes["capacity"] == 2)
+    ]
+
+    cap1 = df_nodes[
+        (~df_nodes["node_id"].isin(door_nodes)) & (df_nodes["capacity"] == 1)
+    ]
 
     ax.scatter(
         door_nodes_df["x_coord"] + 0.5,
         door_nodes_df["y_coord"] + 0.5,
         s=300,
-        color="red",
+        color="deepskyblue",
         edgecolor="black",
         label="Door",
+    )
+
+    ax.scatter(
+        cap8["x_coord"] + 0.5,
+        cap8["y_coord"] + 0.5,
+        s=300,
+        color="palegreen",
+        edgecolor="black",
+        label="Open",
+    )
+
+    ax.scatter(
+        cap2["x_coord"] + 0.5,
+        cap2["y_coord"] + 0.5,
+        s=300,
+        color="moccasin",
+        edgecolor="black",
+        label="Corridor",
+    )
+
+    ax.scatter(
+        cap1["x_coord"] + 0.5,
+        cap1["y_coord"] + 0.5,
+        s=300,
+        color="salmon",
+        edgecolor="black",
+        label="Seat",
     )
 
     # ==========================
@@ -101,6 +130,7 @@ def plot_network(
     ax.invert_yaxis()
     ax.set_xticks(np.arange(X))
     ax.set_yticks(np.arange(Y))
-    # plt.axis("off")
+    plt.axis("off")
+    plt.savefig("CE1.pdf")
 
     plt.show()

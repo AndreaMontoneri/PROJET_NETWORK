@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 
 
-def generate_nodes(width, height, nb_doors):
+def generate_nodes(width, height, idx_doors):
     """
     Generate the dataframe for the nodes
 
@@ -17,17 +17,6 @@ def generate_nodes(width, height, nb_doors):
 
     # NODE ID
     node_id = np.arange(nb_node)
-
-    # DOORS ID
-    top_contour = np.arange(width)
-    left_contour = [width * i for i in range(1, height - 1)]
-    right_contour = [width * i - 1 for i in range(2, height)]
-    bot_contour = np.arange((height - 1) * width, nb_node)
-    contour = np.sort(
-        np.concatenate((top_contour, left_contour, right_contour, bot_contour))
-    )
-
-    idx_doors = np.sort(np.random.choice(contour, nb_doors, replace=False))
 
     # X_COORD / Y_COORD
     x_coord = []
@@ -47,6 +36,9 @@ def generate_nodes(width, height, nb_doors):
         idx += 1
 
     # LINKS_OUT
+    y_chair = np.arange(6, 16)
+    x_chair = np.concatenate([np.arange(1, 6), np.arange(8, 17), np.arange(19, 24)])
+
     links_out = []
     idx_link = 0
     for i in range(nb_node):
@@ -81,6 +73,19 @@ def generate_nodes(width, height, nb_doors):
                     links_out_i = [link_1, link_2, link_3]
                     idx_link += 3
 
+            elif (y in y_chair) and (x in x_chair):
+                link_1 = idx_link
+                link_2 = idx_link + 1
+                links_out_i = [link_1, link_2]
+                idx_link += 2
+
+            elif (y in [5, 16]) and (x in x_chair):
+                link_1 = idx_link
+                link_2 = idx_link + 1
+                link_3 = idx_link + 2
+                links_out_i = [link_1, link_2, link_3]
+                idx_link += 3
+
             else:
                 if (x == 0) or (x == (width - 1)):
                     link_1 = idx_link
@@ -98,16 +103,31 @@ def generate_nodes(width, height, nb_doors):
 
         links_out.append(links_out_i)
 
+    # CAPACITY
+    capacity = []
+    y_corridor = y_chair
+    x_corridor = [0, 6, 7, 17, 18, 24]
+
+    for i in range(nb_node):
+        x = x_coord[i]
+        y = y_coord[i]
+        if (y in y_chair) and (x in x_chair):
+            capacity.append(1)
+        elif (y in y_corridor) and (x in x_corridor):
+            capacity.append(2)
+        else:
+            capacity.append(8)
     # DATAFRAME
     data = {
         "node_id": node_id,
         "x_coord": x_coord,
         "y_coord": y_coord,
         "links_out": links_out,
+        "capacity": capacity,
     }
 
     df_node = pd.DataFrame(data)
-    return df_node, idx_doors
+    return df_node
 
 
 def generate_links(df_node, speed, grid_size, idx_doors):
@@ -150,6 +170,10 @@ def generate_links(df_node, speed, grid_size, idx_doors):
 
     # END_NDOE
     end_node = []
+
+    y_chair = np.arange(6, 16)
+    x_chair = np.concatenate([np.arange(1, 6), np.arange(8, 17), np.arange(19, 24)])
+
     for i in range(nb_nodes):
         if i in idx_doors:
             pass
@@ -197,6 +221,28 @@ def generate_links(df_node, speed, grid_size, idx_doors):
                     end_node.append(node_1)
                     end_node.append(node_2)
                     end_node.append(node_3)
+
+            elif (y in y_chair) and (x in x_chair):
+                node_1 = i - 1
+                node_2 = i + 1
+                end_node.append(node_1)
+                end_node.append(node_2)
+
+            elif (y == 5) and (x in x_chair):
+                node_1 = i - 1
+                node_2 = i + 1
+                node_3 = (y - 1) * WIDTH + x
+                end_node.append(node_1)
+                end_node.append(node_2)
+                end_node.append(node_3)
+
+            elif (y == 16) and (x in x_chair):
+                node_1 = i - 1
+                node_2 = i + 1
+                node_3 = (y + 1) * WIDTH + x
+                end_node.append(node_1)
+                end_node.append(node_2)
+                end_node.append(node_3)
 
             else:
                 if x == 0:
