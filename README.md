@@ -12,4 +12,4 @@
 
 ## Sources 
 
-- Speed in fire : https://link.springer.com/book/10.1007/978-1-4939-2565-0 -> slide 871 du pdf /**** 3-337l du ivre
+- Speed in fire : https://link.springer.com/book/10.1007/978-1-4939-2565-0 -> slide 871 du pdf  page  3-337l du livre
