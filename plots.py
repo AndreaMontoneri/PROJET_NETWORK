@@ -1,5 +1,8 @@
+import matplotlib.cm as cm
+import matplotlib.colors as colors
 import matplotlib.pyplot as plt
 import numpy as np
+from matplotlib.colors import LinearSegmentedColormap
 
 
 def plot_network(
@@ -11,13 +14,33 @@ def plot_network(
     show_node_ids=True,
     show_link_ids=False,
     figsize=(8, 8),
+    x=None,
+    name="image/CE1.pdf",
 ):
     fig, ax = plt.subplots(figsize=figsize)
+    fig.patch.set_facecolor("lightgrey")
 
     # ==========================
     # Draw links
     # ==========================
-    for _, link in df_links.iterrows():
+
+    if x is not None:
+        flow_min = np.min(x)
+        flow_max = np.max(x)
+        norm = colors.Normalize(vmin=flow_min, vmax=flow_max)
+        cmap = LinearSegmentedColormap.from_list(
+            "evacuation", ["white", "orange", "darkred"]
+        )
+
+    if x is None:
+        color = "black"
+        lw = 1
+
+    for idx, link in df_links.iterrows():
+        if x is not None:
+            # lw = 1 + 4 * (x[idx] - flow_min) / (max(flow_max - flow_min, 1e-9))
+            color = cmap(norm(x[idx]))
+            lw = 1 + 5 * norm(x[idx])
         start = link["start_node"]
         end = link["end_node"]
 
@@ -35,8 +58,9 @@ def plot_network(
             length_includes_head=True,
             head_width=0.08,
             head_length=0.12,
-            fc="gray",
-            ec="gray",
+            fc=color,
+            ec=color,
+            linewidth=lw,
             alpha=0.7,
         )
 
@@ -53,7 +77,7 @@ def plot_network(
     door_nodes_df = df_nodes[df_nodes["node_id"].isin(door_nodes)]
 
     cap8 = df_nodes[
-        (~df_nodes["node_id"].isin(door_nodes)) & (df_nodes["capacity"] == 8)
+        (~df_nodes["node_id"].isin(door_nodes)) & (df_nodes["capacity"] == 4)
     ]
 
     cap2 = df_nodes[
@@ -67,7 +91,7 @@ def plot_network(
     ax.scatter(
         door_nodes_df["x_coord"] + 0.5,
         door_nodes_df["y_coord"] + 0.5,
-        s=300,
+        s=200,
         color="deepskyblue",
         edgecolor="black",
         label="Door",
@@ -76,7 +100,7 @@ def plot_network(
     ax.scatter(
         cap8["x_coord"] + 0.5,
         cap8["y_coord"] + 0.5,
-        s=300,
+        s=200,
         color="palegreen",
         edgecolor="black",
         label="Open",
@@ -85,7 +109,7 @@ def plot_network(
     ax.scatter(
         cap2["x_coord"] + 0.5,
         cap2["y_coord"] + 0.5,
-        s=300,
+        s=200,
         color="moccasin",
         edgecolor="black",
         label="Corridor",
@@ -94,7 +118,7 @@ def plot_network(
     ax.scatter(
         cap1["x_coord"] + 0.5,
         cap1["y_coord"] + 0.5,
-        s=300,
+        s=200,
         color="salmon",
         edgecolor="black",
         label="Seat",
@@ -118,6 +142,18 @@ def plot_network(
     # ==========================
     # Plot formatting
     # ==========================
+
+    if x is not None:
+        sm = cm.ScalarMappable(cmap=cmap, norm=norm)
+        sm.set_array([])
+        cbar = plt.colorbar(
+            sm,
+            ax=ax,
+            fraction=0.046,
+            pad=0.04,
+        )
+
+        cbar.set_label("Link flow")
     ax.set_aspect("equal")
 
     ax.set_xlabel("x")
@@ -125,12 +161,13 @@ def plot_network(
 
     plt.legend(bbox_to_anchor=(1, 1), loc="upper left")
     ax.grid(True, alpha=0.7)
+    ax.set_facecolor("blue")
     plt.xlim([0, X])
     plt.ylim([0, Y])
     ax.invert_yaxis()
     ax.set_xticks(np.arange(X))
     ax.set_yticks(np.arange(Y))
     plt.axis("off")
-    plt.savefig("CE1.pdf")
+    plt.savefig(name)
 
     plt.show()

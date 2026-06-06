@@ -1,3 +1,5 @@
+import random
+
 import numpy as np
 import pandas as pd
 
@@ -111,12 +113,14 @@ def generate_nodes(width, height, idx_doors):
     for i in range(nb_node):
         x = x_coord[i]
         y = y_coord[i]
-        if (y in y_chair) and (x in x_chair):
+        if i in idx_doors:
+            capacity.append(np.inf)
+        elif (y in y_chair) and (x in x_chair):
             capacity.append(1)
         elif (y in y_corridor) and (x in x_corridor):
             capacity.append(2)
         else:
-            capacity.append(8)
+            capacity.append(4)
     # DATAFRAME
     data = {
         "node_id": node_id,
@@ -130,7 +134,9 @@ def generate_nodes(width, height, idx_doors):
     return df_node
 
 
-def generate_links(df_node, speed, grid_size, idx_doors):
+def generate_links(
+    df_node, speed_flat, speed_stairs, speed_chairs, grid_size, idx_doors
+):
     """
     Generate the dataframe for the links
 
@@ -155,18 +161,18 @@ def generate_links(df_node, speed, grid_size, idx_doors):
         idx_node -= 1
     nb_links = link_per_node[idx_node][-1] + 1
     nb_nodes = len(link_per_node)
-    tt = grid_size / speed
+    tt_flat = grid_size / speed_flat
+    tt_stairs = grid_size / speed_stairs
+    tt_chair = grid_size / speed_chairs
 
     # LINK_ID
     link_id = np.arange(nb_links)
 
-    # START_NODE / t0
+    # START_NODE
     start_node = []
-    t0 = []
     for i in range(nb_nodes):
         for j in range(len(link_per_node[i])):
             start_node.append(i)
-            t0.append(tt)
 
     # END_NDOE
     end_node = []
@@ -214,6 +220,7 @@ def generate_links(df_node, speed, grid_size, idx_doors):
 
                     end_node.append(node_1)
                     end_node.append(node_2)
+
                 else:
                     node_1 = i - 1
                     node_2 = i + 1
@@ -269,17 +276,129 @@ def generate_links(df_node, speed, grid_size, idx_doors):
                     end_node.append(node_3)
                     end_node.append(node_4)
 
+    # T0 / CAPACITY
+    t0 = []
+    capacity = []
+
+    y_flat = np.concatenate([np.arange(0, 6), np.arange(16, 18)])
+
+    for i in range(nb_nodes):
+        if i in idx_doors:
+            pass
+        else:
+            x = x_coord[i]
+            y = y_coord[i]
+            if y in y_flat:
+                nb_links_out = len(link_per_node[i])
+                for i in range(nb_links_out):
+                    t0.append(tt_flat)
+                    capacity.append(4)
+            elif (~(y in y_flat)) and (x in x_chair):
+                nb_links_out = len(link_per_node[i])
+                for i in range(nb_links_out):
+                    t0.append(tt_chair)
+                    capacity.append(1)
+            elif (~(y in y_flat)) and (~(x in x_chair)):
+                nb_links_out = len(link_per_node[i])
+                for i in range(nb_links_out):
+                    t0.append(tt_stairs)
+                    capacity.append(2)
+
     # DATAFRAME
     data = {
         "link_id": link_id,
         "start_node": start_node,
         "end_node": end_node,
         "t0": t0,
+        "sat": capacity,
     }
 
-    df_node = pd.DataFrame(data)
-    return df_node
+    df_link = pd.DataFrame(data)
+    return df_link
 
 
-def generate_demand(df_node, nb_people, type_dystrib):
-    pass
+def generate_demand(df_node, week, type_dystrib):
+    nb_place = 190
+    if week == 1:
+        nb_people = 1 * nb_place
+
+    elif week == 7:
+        nb_people = int(0.75 * nb_place)
+
+    elif week == 14:
+        nb_people = int(0.4 * nb_place)
+
+    x_chair = np.concatenate([np.arange(1, 6), np.arange(8, 17), np.arange(19, 24)])
+    y_chair = np.arange(6, 16)
+
+    chair_coord = [[int(x), int(y)] for y in y_chair for x in x_chair]
+
+    idx_chairs = np.arange(len(chair_coord))
+
+    people_seat_idx = np.sort(np.random.choice(idx_chairs, nb_people, replace=False))
+    people_seat = np.array(chair_coord)[people_seat_idx]
+
+    # DEMAND
+    demand = np.ones(nb_people)
+
+    # OD_ID / ORIGIN
+    od_id = []
+    origin = []
+    for i in range(nb_people):
+        od_id.append(i)
+
+        x_chair_i = people_seat[i, 0]
+        y_chair_i = people_seat[i, 1]
+
+        origin_id = df_node.loc[
+            (df_node["x_coord"] == x_chair_i) & (df_node["y_coord"] == y_chair_i),
+            "node_id",
+        ].item()
+        origin.append(origin_id)
+
+    # DESTINATION
+    destination = []
+    idx_people = np.arange(nb_people)
+    if type_dystrib == "even":
+        ppl_per_door = int(nb_people / 3)
+        door_1 = np.random.choice(idx_people, ppl_per_door + 1, replace=False)
+        idx_people = []
+        for i in range(nb_people):
+            if i not in door_1:
+                idx_people.append(i)
+        door_2 = np.random.choice(idx_people, ppl_per_door, replace=False)
+        idx_people = []
+        for i in range(nb_people):
+            if (i not in door_1) and (i not in door_2):
+                idx_people.append(i)
+        door_3 = np.random.choice(idx_people, ppl_per_door, replace=False)
+
+        for i in range(nb_people):
+            if i in door_1:
+                destination.append(74)
+            elif i in door_2:
+                destination.append(429)
+            elif i in door_3:
+                destination.append(445)
+    elif type_dystrib == "random":
+        for i in range(nb_people):
+            destination_i = random.randint(1, 3)
+            if destination_i == 1:
+                door_id = 74
+            elif destination_i == 2:
+                door_id = 429
+            if destination_i == 3:
+                door_id = 445
+            destination.append(door_id)
+    elif type_dystrib == "closest":
+        pass
+
+    data = {
+        "od_id": od_id,
+        "origin": origin,
+        "destination": destination,
+        "demand": demand,
+    }
+
+    df_od = pd.DataFrame(data)
+    return df_od, people_seat
