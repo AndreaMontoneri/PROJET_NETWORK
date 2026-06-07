@@ -2,9 +2,9 @@
 
 ## Todo
 
-- [ ] ⁠modéliser la salle
+- [x] ⁠modéliser la salle
     - donne la demande (full, under capacity, …)
-- [ ] algo qui solve user and system equilibrium
+- [x] algo qui solve user and system equilibrium
 - [ ] faire les différentes distribution de demande
 - [ ] simulations: obstacles, suivi de groupe
 

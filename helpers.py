@@ -116,7 +116,7 @@ def all_or_nothing_assignment(t, df_od, df_links, df_node):
     return x
 
 
-def line_search(x, y, max_gap, link_cost_function: callable, df_links):
+def line_search(x, y, max_gap, link_cost_function: callable, df_links, alpha, beta):
     """
     Determine step size by bisection line search
 
@@ -131,7 +131,7 @@ def line_search(x, y, max_gap, link_cost_function: callable, df_links):
     alpha_U = 1
     while alpha_U - alpha_L > max_gap:
         alpha = (alpha_L + alpha_U) / 2
-        grad = link_cost_function(x + alpha * (y - x), df_links) @ (y - x)
+        grad = link_cost_function(x + alpha * (y - x), alpha, beta, df_links) @ (y - x)
         if grad > 0:
             alpha_U = alpha
         else:
@@ -148,6 +148,8 @@ def FW(
     df_od,
     df_link,
     df_nodes,
+    alpha,
+    beta,
 ):
     """
     Solve static traffic assignment
@@ -165,28 +167,30 @@ def FW(
     """
     t0 = df_link["t0"].to_numpy()
 
-    gap = []
-    obj = []
-    x = []
-    x.append(all_or_nothing_assignment(t0, df_od, df_link, df_nodes))
+    gap_list = []
+    obj_list = []
+    x = all_or_nothing_assignment(t0, df_od, df_link, df_nodes)
 
     for i in range(max_iter):
         if (i + 1) % 500 == 0:
             print(f"Iteration : {i + 1} / {max_iter}")
 
-        t = link_cost_function(x[-1], df_link)
+        t = link_cost_function(x, alpha, beta, df_link)
         y = all_or_nothing_assignment(t, df_od, df_link, df_nodes)
-        d = y - x[-1]
-        alpha = line_search(x[-1], y, max_gap_ls, link_cost_function, df_link)
-        x.append(x[-1] + alpha * d)
-        gap.append(np.dot(t, -d) / np.dot(t, x[-1]))
-        obj.append(objective_function(x[-1], df_link))
-        if gap[-1] < max_gap:
+        d = y - x
+        alpha = line_search(x, y, max_gap_ls, link_cost_function, df_link, alpha, beta)
+        x += alpha * d
+
+        gap = np.dot(t, -d) / np.linalg.norm(d)
+        obj = objective_function(x, alpha, beta, df_link)
+
+        gap_list.append(gap)
+        obj_list.append(obj)
+
+        if gap < max_gap:
             break
 
     if i != max_iter - 1:
         print(f"Converged after {i + 1} iterations")
 
-    x_star = x[-1]
-
-    return x_star, gap, obj
+    return x, gap_list, obj_list
