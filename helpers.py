@@ -181,7 +181,7 @@ def FW(
         alpha = line_search(x, y, max_gap_ls, link_cost_function, df_link, alpha, beta)
         x += alpha * d
 
-        gap = np.dot(t, -d) / np.linalg.norm(d)
+        gap = np.dot(t, -d) / np.dot(t, x)
         obj = objective_function(x, alpha, beta, df_link)
 
         gap_list.append(gap)
