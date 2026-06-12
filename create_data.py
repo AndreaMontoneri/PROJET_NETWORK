@@ -391,7 +391,20 @@ def generate_demand(df_node, week, type_dystrib):
                 door_id = 445
             destination.append(door_id)
     elif type_dystrib == "closest":
-        pass
+        door_nodes = {
+            74:  df_node.loc[df_node["node_id"] == 74,  ["x_coord", "y_coord"]].values[0],
+            429: df_node.loc[df_node["node_id"] == 429, ["x_coord", "y_coord"]].values[0],
+            445: df_node.loc[df_node["node_id"] == 445, ["x_coord", "y_coord"]].values[0],
+        }
+
+        for i in range(nb_people):
+            x_i, y_i = people_seat[i, 0], people_seat[i, 1]
+
+            closest_door = min(
+                door_nodes,
+                key=lambda d: np.sqrt((x_i - door_nodes[d][0])**2 + (y_i - door_nodes[d][1])**2)
+            )
+            destination.append(closest_door)
 
     data = {
         "od_id": od_id,

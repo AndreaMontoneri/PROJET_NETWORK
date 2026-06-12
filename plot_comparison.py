@@ -9,7 +9,7 @@ idx_doors = [74, 429, 445]
 door_names = ["Porte 1 (74)", "Porte 2 (429)", "Porte 3 (445)"]
 
 DOOR_LINKS = {
-    name: df_link.index[df_link["end_node"] == door_id].tolist()
+    name: df_links.index[df_links["end_node"] == door_id].tolist()
     for name, door_id in zip(door_names, idx_doors)
 }
 
