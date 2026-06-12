@@ -194,3 +194,22 @@ def FW(
         print(f"Converged after {i + 1} iterations")
 
     return x, gap_list, obj_list
+
+def compute_travel_times(x_star, df_od, df_node, df_link, link_cost_function, alpha, beta):
+    """
+    Calcule le temps de trajet de chaque personne au flux d'équilibre x_star.
+    Retourne un vecteur de longueur nb_people.
+    """
+    t = link_cost_function(x_star, alpha, beta, df_link)  # coûts congestionnés
+    od_id       = df_od["od_id"].to_numpy()
+    origin      = df_od["origin"].to_numpy()
+    destination = df_od["destination"].to_numpy()
+
+    travel_times = np.zeros(len(od_id))
+    for id in od_id:
+        org  = origin[id]
+        dest = destination[id]
+        u, _ = shortest_path_tree(t, org, df_node, df_link)
+        travel_times[id] = u[dest]
+
+    return travel_times
